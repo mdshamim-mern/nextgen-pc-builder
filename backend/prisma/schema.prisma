@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------- Enums ---------------- //
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+}
+
+
+enum ComponentType {
+  CPU
+  CPU_COOLER
+  MOTHERBOARD
+  RAM
+  STORAGE
+  GPU
+  PSU
+  CASING
+  MONITOR
+  CASING_COOLER
+  KEYBOARD
+  MOUSE
+  SPEAKER
+  HEADPHONE
+  WIFI_ADAPTER
+  ANTI_VIRUS
+  UPS
+}
+
+// ---------------- Models ---------------- //
+
+model User {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  password  String
+  role      Role      @default(USER)
+  orders    Order[]
+  builds    PCBuild[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Component {
+  id             String        @id @default(uuid())
+  name           String
+  brand          String
+  type           ComponentType
+  price          Float
+  stock          Int
+  imageUrl       String?
+  
+  specifications Json
+
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  orderItems     OrderItem[]
+  buildItems     BuildItem[]
+
+  @@map("components")
+}
+
+// ---------------- E-commerce Models ---------------- //
+
+model Order {
+  id            String        @id @default(uuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+  txnId         String?
+  totalPrice    Float
+  address       String
+  items         OrderItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String    @id @default(uuid())
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  componentId String
+  component   Component @relation(fields: [componentId], references: [id])
+  quantity    Int
+  price       Float
+
+  @@map("order_items")
+}
+
+// ---------------- PC Builder Models ---------------- //
+
+model PCBuild {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+  buildName String
+  items     BuildItem[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("pc_builds")
+}
+
+model BuildItem {
+  id          String    @id @default(uuid())
+  buildId     String
+  build       PCBuild   @relation(fields: [buildId], references: [id], onDelete: Cascade)
+  componentId String
+  component   Component @relation(fields: [componentId], references: [id])
+  slotType    String   
+
+  @@map("build_items")
+}

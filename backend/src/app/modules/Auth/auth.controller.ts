@@ -1,0 +1,11 @@
+import { Request, Response } from 'express';
+import { AuthService } from './auth.service';
+import catchAsync from '../../shared/catchAsync';
+import sendResponse from '../../shared/sendResponse';
+
+const loginUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.loginUser(req.body);
+  sendResponse(res, { statusCode: 200, success: true, message: 'User logged in successfully', data: result });
+});
+
+export const AuthController = { loginUser };
